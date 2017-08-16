@@ -9,7 +9,8 @@ import time
 try:
     from urllib.parse import urlparse  # py3
 except:
-    from urlparse import urlparse  # py2
+    # from urlparse import urlparse  # py2
+    pass
 
 import pdfkit
 import requests
@@ -70,6 +71,7 @@ class Crawler(object):
 
     def run(self):
         start = time.time()
+        """用于pdf创建的参数"""
         options = {
             'page-size': 'Letter',
             'margin-top': '0.75in',
@@ -87,16 +89,23 @@ class Crawler(object):
             'outline-depth': 10,
         }
         htmls = []
+        """通过循环从菜单中逐个提取url,并取得每个url中的内容"""
         for index, url in enumerate(self.parse_menu(self.request(self.start_url))):
             html = self.parse_body(self.request(url))
+            """构建文件名,将取得的html写入文件"""
             f_name = ".".join([str(index), "html"])
             with open(f_name, 'wb') as f:
                 f.write(html)
+            """使用文件名构建一个数组"""
             htmls.append(f_name)
 
+        """生成pdf文件"""
         pdfkit.from_file(htmls, self.name + ".pdf", options=options)
+
+        """删除临时的html文件"""
         for html in htmls:
             os.remove(html)
+        """计算程序耗时"""
         total_time = time.time() - start
         print(u"总共耗时：%f 秒" % total_time)
 
@@ -113,11 +122,14 @@ class LiaoxuefengPythonCrawler(Crawler):
         :return: url生成器
         """
         soup = BeautifulSoup(response.content, "html.parser")
+        """提取侧边栏的菜单目录"""
         menu_tag = soup.find_all(class_="uk-nav uk-nav-side")[1]
         for li in menu_tag.find_all("li"):
             url = li.a.get("href")
+            """处理链接中没有http的情况,即原来使用的是相对路径"""
             if not url.startswith("http"):
                 url = "".join([self.domain, url])  # 补全为全路径
+            """让函数直接返回迭代结果"""
             yield url
 
     def parse_body(self, response):
@@ -128,8 +140,9 @@ class LiaoxuefengPythonCrawler(Crawler):
         """
         try:
             soup = BeautifulSoup(response.content, 'html.parser')
+            """提取内容"""
             body = soup.find_all(class_="x-wiki-content")[0]
-
+            """对获取的内容进行重构(重新排列)"""
             # 加入标题, 居中显示
             title = soup.find('h4').get_text()
             center_tag = soup.new_tag("center")
@@ -139,6 +152,8 @@ class LiaoxuefengPythonCrawler(Crawler):
             body.insert(1, center_tag)
 
             html = str(body)
+
+            """图片url改用绝对地址"""
             # body中的img标签的src相对路径的改成绝对路径
             pattern = "(<img .*?src=\")(.*?)(\")"
 
@@ -148,12 +163,14 @@ class LiaoxuefengPythonCrawler(Crawler):
                     return rtn
                 else:
                     return "".join([m.group(1), m.group(2), m.group(3)])
-
+            """替换html中图片的超链接"""
             html = re.compile(pattern).sub(func, html)
+            """用模板,产生完整的html,编码后返回"""
             html = html_template.format(content=html)
-            html = html.encode("utf-8")
+            html = html.encode("utf-8")  # 为什么不直接在soup中解码呢?
             return html
         except Exception as e:
+            print(e)
             logging.error("解析错误", exc_info=True)
 
 
