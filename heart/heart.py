@@ -11,6 +11,7 @@ from wordcloud import WordCloud
 
 __author__ = 'liuzhijun'
 
+"""一个字典"""
 cookies = {
     "ALF": "xxxx",
     "SCF": "xxxxxx.",
@@ -82,6 +83,6 @@ def generate_img(texts):
 
 
 if __name__ == '__main__':
-    texts = fetch_weibo()
-    write_csv(texts)
-    generate_img(word_segment(read_csv()))
+    texts = fetch_weibo()  # 取数据
+    write_csv(texts)  # 写数据
+    generate_img(word_segment(read_csv()))  # 读数据,解析数据,数据绘图
