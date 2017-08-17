@@ -14,7 +14,7 @@ if __name__ == '__main__':
             "remember_me": "1",}
     # redirect_url	http://www.jobbole.com}
     url = "http://python.jobbole.com/wp-admin/admin-ajax.php"
-    response = requests.post(url, data)
+    response = requests.post(url, data=data)
 
     for name, value in response.cookies.items():
         print(name, value)

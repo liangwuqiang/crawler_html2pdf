@@ -3,11 +3,33 @@
 
 import time
 from pymongo import MongoClient
+"""
+如果每条记录的记录格式是固定的，不是不定列的，优先SQL，
+
+mongodb是基于文档式的。
+
+而mongodb的存在更多的是对于mysql的一个细分需求领域中的补充.
+
+特点是高性能、易部署、易使用，存储数据非常方便。
+"""
 import requests
-from datetime import timedelta
+# from datetime import timedelta
 import re
 from bs4 import BeautifulSoup
 from tornado import httpclient, gen, ioloop, queues
+"""
+1.django大而全，适合小型的压力不大的项目，一旦压力上来其是扛不住的，毕竟一是太重，而是非异步。 
+但是好处就是什么都有，你能想到的功能其都有对应contrib组件给你用
+
+2.tornado好处是epoll异步性能高，还支持长连接。 
+坏处是：功能/第三方库相对少，而且想多实例还要自己去配置，再者没有很成熟的配套framework,
+而只是提供了核心的功能，其余的都需要你自己来做。
+
+建议先熟悉django, 随后在了解reactor基础上再来接触tornado.  
+这样你就可以在tornado中使用很多django成熟的东西，比如middleware什么的~
+
+链接：https://www.zhihu.com/question/19809153/answer/27053909
+"""
 
 __author__ = 'liuzhijun'
 
@@ -17,7 +39,8 @@ headers = {
     'Connection': 'Keep-Alive',
     'Accept': 'text/html, application/xhtml+xml, */*',
     'Accept-Language': 'en-US,en;q=0.8,zh-Hans-CN;q=0.5,zh-Hans;q=0.3',
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Sa",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Sa",
     "Referer": "http://www.jobbole.com/",
 }
 
@@ -90,16 +113,20 @@ def get_post_data_from_url(post_url, cookies):
         raise gen.Return({})
 
 
-
-@gen.coroutine
+# @gen.coroutine
 def mainx():
     start = time.time()
     fetched = 0
     client = MongoClient('mongodb://localhost:27017/')
     db = client['posts']
     cookies = {
-        'wordpress_logged_in_0efdf49af511fd88681529ef8c2e5fbf': 'liuzhijun%7C1489462391%7CcFSvpRWbyJcPRGSIelRPWRIqUNdIQnF5Jjh1BrBPQI2%7C812c5106ea45baeae74102845a2c6d269de6b7547e85a5613b575aa9c8708add',
-        'wordpress_0efdf49af511fd88681529ef8c2e5fbf': 'liuzhijun%7C1489462391%7CcFSvpRWbyJcPRGSIelRPWRIqUNdIQnF5Jjh1BrBPQI2%7C0edb104a0e34927a3c18e3fc4f10cc051153b1252f1f74efd7b57d21613e1f92'}
+        'wordpress_logged_in_0efdf49af511fd88681529ef8c2e5fbf':
+            'liuzhijun%7C1489462391%7CcFSvpRWbyJcPRGSIelRPWRIqUNdIQnF5Jjh1BrBPQI2%7'
+            'C812c5106ea45baeae74102845a2c6d269de6b7547e85a5613b575aa9c8708add',
+        'wordpress_0efdf49af511fd88681529ef8c2e5fbf':
+            'liuzhijun%7C1489462391%7CcFSvpRWbyJcPRGSIelRPWRIqUNdIQnF5Jjh1BrBPQI2%7'
+            'C0edb104a0e34927a3c18e3fc4f10cc051153b1252f1f74efd7b57d21613e1f92'
+    }
     post_queue = queues.Queue()
     page_queue = queues.Queue()
     for i in range(1, 69):
@@ -107,7 +134,7 @@ def mainx():
         page_queue.put(page_url)
         print(page_url)
 
-    @gen.coroutine
+    # @gen.coroutine
     def posts_url_worker():
         while True:
             page = yield page_queue.get()
@@ -162,9 +189,14 @@ if __name__ == '__main__':
     io_loop = ioloop.IOLoop.current()
     # io_loop.run_sync(main)
     # io_loop.run_sync(lambda: get_all_post_url(67))
-    cookies = {
-        'wordpress_logged_in_0efdf49af511fd88681529ef8c2e5fbf': 'liuzhijun%7C1489462391%7CcFSvpRWbyJcPRGSIelRPWRIqUNdIQnF5Jjh1BrBPQI2%7C812c5106ea45baeae74102845a2c6d269de6b7547e85a5613b575aa9c8708add',
-        'wordpress_0efdf49af511fd88681529ef8c2e5fbf': 'liuzhijun%7C1489462391%7CcFSvpRWbyJcPRGSIelRPWRIqUNdIQnF5Jjh1BrBPQI2%7C0edb104a0e34927a3c18e3fc4f10cc051153b1252f1f74efd7b57d21613e1f92'}
+    # cookies = {
+    #     'wordpress_logged_in_0efdf49af511fd88681529ef8c2e5fbf':
+    # 'liuzhijun%7C1489462391%7CcFSvpRWbyJcPRGSIelRPWRIqUNdIQnF5Jjh1BrBPQI2%7C812
+    # c5106ea45baeae74102845a2c6d269de6b7547e85a5613b575aa9c8708add',
+    #     'wordpress_0efdf49af511fd88681529ef8c2e5fbf':
+    # 'liuzhijun%7C1489462391%7CcFSvpRWbyJcPRGSIelRPWRIqUNdIQnF5Jjh1BrBPQI2%7C0edb
+    # 104a0e34927a3c18e3fc4f10cc051153b1252f1f74efd7b57d21613e1f92'}
 
     # io_loop.run_sync(lambda: get_post_data_from_url("http://python.jobbole.com/87288/", cookies))
-    io_loop.run_sync(mainx)
+    # io_loop.run_sync(mainx)
+    print(type(io_loop))
